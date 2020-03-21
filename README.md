@@ -15,3 +15,6 @@ The result was me sitting down and scribbling down a little script that would ac
 
 ## Deployment
 Make the PHP file available under a publically accessible URL and make sure the script can write to /tmp
+
+## ESP Display part
+The other half of this project is the Python source code to display the filtered data on the ESP itself. That can be found here: https://github.com/eldan-dex/ESP32-corona-tracker
