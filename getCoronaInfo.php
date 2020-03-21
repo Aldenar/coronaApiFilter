@@ -49,6 +49,7 @@
 	        		if ($region->name == "Hlavní město Praha")
 	        		{
 	            		$data->infectedPrague = $region->value;
+                        break;
 	        		}
 	    		}
                 $data->recvAt = $timestamp;
@@ -78,7 +79,8 @@
 		    {
         		if ($region->name == "Hlavní město Praha")
         		{
-            		$data->infectedPrague = $region->value;
+                    $data->infectedPrague = $region->value;
+                    break;
         		}
     		}
 
