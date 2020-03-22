@@ -43,7 +43,7 @@
                 $data->totalTested = $jsonData->totalTested;
                 $data->recovered = $jsonData->recovered;
                 $data->lastUpdatedAtSource = $jsonData->lastUpdatedAtSource;
-                $data->dead = 0;
+                $data->dead = $jsonData->fromBabisNewspapers->totalDeaths;
 	            foreach ($jsonData->infectedByRegion as $region)
 			    {
 	        		if ($region->name == "Hlavní město Praha")
@@ -74,6 +74,7 @@
             $data->infected = $jsonData->infected;
             $data->totalTested = $jsonData->totalTested;
             $data->recovered = $jsonData->recovered;
+            $data->dead = $jsonData->fromBabisNewspapers->totalDeaths;
             $data->lastUpdatedAtSource = $jsonData->lastUpdatedAtSource;
             foreach ($jsonData->infectedByRegion as $region)
 		    {
@@ -84,7 +85,6 @@
         		}
     		}
 
-			$data->dead = 0;
             $data->recvAt = $timestamp;
             file_put_contents($cacheFile, json_encode($data));
             return $data;
