@@ -43,7 +43,7 @@
                 $data->totalTested = $jsonData->totalTested;
                 $data->recovered = $jsonData->recovered;
                 $data->lastUpdatedAtSource = $jsonData->lastUpdatedAtSource;
-                $data->dead = $jsonData->fromBabisNewspapers->totalDeaths;
+                $data->dead = $jsonData->deceased;
 	            foreach ($jsonData->infectedByRegion as $region)
 			    {
 	        		if ($region->name == "Hlavní město Praha")
@@ -74,7 +74,7 @@
             $data->infected = $jsonData->infected;
             $data->totalTested = $jsonData->totalTested;
             $data->recovered = $jsonData->recovered;
-            $data->dead = $jsonData->fromBabisNewspapers->totalDeaths;
+            $data->dead = $jsonData->deceased;
             $data->lastUpdatedAtSource = $jsonData->lastUpdatedAtSource;
             foreach ($jsonData->infectedByRegion as $region)
 		    {
