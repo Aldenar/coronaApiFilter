@@ -57,7 +57,7 @@ function getData(){
 
 
 function getPayload(){
-        $DEBUG = 1;
+        $DEBUG = 0;
         $cacheStaleTime = 360;
         if ($DEBUG) 
             $cacheFile = "/tmp/coronaCacheDebug"; 
@@ -71,15 +71,18 @@ function getPayload(){
             if ($DEBUG) echo "CACHE READABLE".PHP_EOL;
 
             $json=json_decode(file_get_contents($cacheFile));
+            if ($json == NULL ) {
+                return json_decode("{'error':'Cache loaded, failed to parse'}");
+            }
             if ( ($timestamp - $json->recvAt) > $cacheStaleTime) {
                 if ($DEBUG) echo "CACHE STALE".PHP_EOL;
                 # If fetching new data failed, return stale cache
                 $data = getData();
-                if (isset(json_encode($data)->error)) {
+                if (isset($data->error)) {
                     return $json;
                 }
                 #Otherwise save new data and return it
-                file_put_contents($cacheFile, $data);
+                file_put_contents($cacheFile, json_encode($data));
                 return $data;
             } else {
                 # Horay, our cache is still current! Simply return it then
