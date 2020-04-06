@@ -1,11 +1,12 @@
 <?php
 
-    function fetchFromApi(){
+function fetchFromApi($api="https://api.apify.com/v2/key-value-stores/K373S4uCFR9W1K8ei/records/LATEST?disableRedirect=true"){
+    try {
         $curlSession = curl_init();
         curl_setopt($curlSession, CURLOPT_USERAGENT, 'CoronaTrackerFilterAPI/1.0');
         curl_setopt($curlSession, CURLOPT_FAILONERROR, true);
         curl_setopt($curlSession, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($curlSession, CURLOPT_URL, 'https://api.apify.com/v2/key-value-stores/K373S4uCFR9W1K8ei/records/LATEST?disableRedirect=true');
+        curl_setopt($curlSession, CURLOPT_URL, $api);
 
         $jsonData = curl_exec($curlSession);
         
@@ -15,12 +16,54 @@
         }
         curl_close($curlSession);
         return $jsonData;
+
+        } catch (Exception $e) {
+            return 1;
+        }
     }
 
-    function getPayload(){
-        $DEBUG = 0;
-		$cacheStaleTime = 360;
-        $cacheFile = "/tmp/coronaCache";
+
+function getData(){
+    $timestamp = time();
+    $apifyJson = fetchFromApi();
+    $seznamJson = fetchFromApi("https://trending.seznam.cz/covid19");
+    if (($apifyJson == 1) || ($seznamJson == 1))
+    {
+        return json_encode('{"error":"Error fetching data from API", "apifyReturn":\''.$apifyJson.'\',\'seznamReturn\':\''.$seznamJson.'\'}');
+    }
+
+    $apifyData = json_decode($apifyJson);
+    $seznamData = json_decode($seznamJson);
+    $data = new \stdClass();
+
+    $data->infected = $apifyData->infected;
+    $data->totalTested = $apifyData->totalTested;
+    $data->recovered = $apifyData->recovered;
+    $data->r = $seznamData->r;
+    $data->dead = $apifyData->deceased;
+    $data->lastUpdatedAtSource = $apifyData->lastUpdatedAtSource;
+    foreach ($apifyData->infectedByRegion as $region)
+    {
+		if ($region->name == "Hlavní město Praha")
+		{
+            $data->infectedPrague = $region->value;
+            break;
+		}
+	}
+
+    $data->recvAt = $timestamp;
+    return $data;
+}
+
+
+function getPayload(){
+        $DEBUG = 1;
+        $cacheStaleTime = 360;
+        if ($DEBUG) 
+            $cacheFile = "/tmp/coronaCacheDebug"; 
+        else 
+            $cacheFile = "/tmp/coronaCache";
+
         $timestamp = time();
    
         if (file_exists($cacheFile) && is_readable($cacheFile))
@@ -31,61 +74,21 @@
             if ( ($timestamp - $json->recvAt) > $cacheStaleTime) {
                 if ($DEBUG) echo "CACHE STALE".PHP_EOL;
                 # If fetching new data failed, return stale cache
-                $newJson = fetchFromApi();
-                if ($newJson == 1) {
+                $data = getData();
+                if (isset(json_encode($data)->error)) {
                     return $json;
                 }
-                #Else prepare new data, replace stale cache and return it
-                $jsonData = json_decode($newJson);
-                $data = new \stdClass();
-            
-                $data->infected = $jsonData->infected;
-                $data->totalTested = $jsonData->totalTested;
-                $data->recovered = $jsonData->recovered;
-                $data->lastUpdatedAtSource = $jsonData->lastUpdatedAtSource;
-                $data->dead = $jsonData->deceased;
-	            foreach ($jsonData->infectedByRegion as $region)
-			    {
-	        		if ($region->name == "Hlavní město Praha")
-	        		{
-	            		$data->infectedPrague = $region->value;
-                        break;
-	        		}
-	    		}
-                $data->recvAt = $timestamp;
-                file_put_contents($cacheFile, json_encode($data));
+                #Otherwise save new data and return it
+                file_put_contents($cacheFile, $data);
                 return $data;
             } else {
                 # Horay, our cache is still current! Simply return it then
                 return $json;
             }
         } else { #If we have no cache present yet...
-            $json = fetchFromApi();
-            if ($json == 1)
-            {
-                #If we got an error fetching data here... No way to recover but to return an error...
-                echo '{"error":"REMOTE_API_ERROR"}';
-                exit(1);
-            }
-            #Else we parse the new data, save it to cache and return it
-			$jsonData = json_decode($json);
-            $data = new \stdClass();
-
-            $data->infected = $jsonData->infected;
-            $data->totalTested = $jsonData->totalTested;
-            $data->recovered = $jsonData->recovered;
-            $data->dead = $jsonData->deceased;
-            $data->lastUpdatedAtSource = $jsonData->lastUpdatedAtSource;
-            foreach ($jsonData->infectedByRegion as $region)
-		    {
-        		if ($region->name == "Hlavní město Praha")
-        		{
-                    $data->infectedPrague = $region->value;
-                    break;
-        		}
-    		}
-
-            $data->recvAt = $timestamp;
+            $data = getData();
+            if (isset(json_encode($data)->error))
+                return $data;
             file_put_contents($cacheFile, json_encode($data));
             return $data;
         }
@@ -95,4 +98,4 @@
 
     $jsonData = getPayload();
     echo json_encode($jsonData)
-    ?>
+?>
